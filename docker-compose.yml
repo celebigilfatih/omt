@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: omt-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: omt_tournament
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - omt-network
+
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: omt-app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres123@postgres:5432/omt_tournament"
+      NEXTAUTH_SECRET: "your-secret-key-here"
+      NEXTAUTH_URL: "http://localhost:3000"
+    ports:
+      - "3001:3000"
+    depends_on:
+      - postgres
+    volumes:
+      - ./public/uploads:/app/public/uploads
+    networks:
+      - omt-network
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        node server.js
+      "
+
+volumes:
+  postgres_data:
+
+networks:
+  omt-network:
+    driver: bridge

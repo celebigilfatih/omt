@@ -1,0 +1,14 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/admin/login/page": "app/admin/login/page.js",
+  "/admin/page": "app/admin/page.js",
+  "/api/admin/applications/[id]/route": "app/api/admin/applications/[id]/route.js",
+  "/api/admin/applications/route": "app/api/admin/applications/route.js",
+  "/api/applications/route": "app/api/applications/route.js",
+  "/api/teams/route": "app/api/teams/route.js",
+  "/api/upload/route": "app/api/upload/route.js",
+  "/basvuru/page": "app/basvuru/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/page": "app/page.js",
+  "/takimlar/page": "app/takimlar/page.js"
+}
