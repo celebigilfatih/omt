@@ -1,8 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
-    {"offset": {"line": 61, "column": 0}, "map": {"version":3,"sources":["file:///Users/celebigil/Dev/omt/src/lib/prisma.ts"],"sourcesContent":["import { PrismaClient } from '@prisma/client'\n\nconst globalForPrisma = globalThis as unknown as {\n  prisma: PrismaClient | undefined\n}\n\nexport const prisma = globalForPrisma.prisma ?? new PrismaClient()\n\nif (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma"],"names":[],"mappings":";;;;AAAA;;AAEA,MAAM,kBAAkB;AAIjB,MAAM,SAAS,gBAAgB,MAAM,IAAI,IAAI,6IAAY;AAEhE,wCAA2C,gBAAgB,MAAM,GAAG","debugId":null}},
-    {"offset": {"line": 74, "column": 0}, "map": {"version":3,"sources":["file:///Users/celebigil/Dev/omt/src/app/api/admin/applications/route.ts"],"sourcesContent":["import { NextResponse } from \"next/server\";\nimport { prisma } from \"@/lib/prisma\";\n\nexport async function GET() {\n  try {\n    const applications = await prisma.teamApplication.findMany({\n      orderBy: {\n        createdAt: 'desc'\n      }\n    });\n\n    return NextResponse.json(applications);\n  } catch (error) {\n    console.error(\"Error fetching applications:\", error);\n    return NextResponse.json(\n      { message: \"Başvurular yüklenirken bir hata oluştu\" },\n      { status: 500 }\n    );\n  }\n}"],"names":[],"mappings":";;;;AAAA;AACA;;;AAEO,eAAe;IACpB,IAAI;QACF,MAAM,eAAe,MAAM,gIAAM,CAAC,eAAe,CAAC,QAAQ,CAAC;YACzD,SAAS;gBACP,WAAW;YACb;QACF;QAEA,OAAO,gJAAY,CAAC,IAAI,CAAC;IAC3B,EAAE,OAAO,OAAO;QACd,QAAQ,KAAK,CAAC,gCAAgC;QAC9C,OAAO,gJAAY,CAAC,IAAI,CACtB;YAAE,SAAS;QAAyC,GACpD;YAAE,QAAQ;QAAI;IAElB;AACF","debugId":null}}]
-}
