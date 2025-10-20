@@ -15,7 +15,11 @@ import {
   Mail,
   Calendar,
   Trophy,
-  LogOut
+  LogOut,
+  UserPlus,
+  Key,
+  Trash2,
+  Edit
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,6 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
 import { isAdminAuthenticated, clearAdminSession } from "@/lib/auth";
 
 // Types
@@ -52,6 +57,14 @@ interface Team {
   description?: string;
   logoUrl?: string;
   createdAt: string;
+}
+
+interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Constants
@@ -87,11 +100,20 @@ export default function AdminPage() {
   const router = useRouter();
   const [applications, setApplications] = useState<TeamApplication[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"applications" | "teams">("applications");
+  const [activeTab, setActiveTab] = useState<"applications" | "teams" | "users">("applications");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedApplication, setSelectedApplication] = useState<TeamApplication | null>(null);
+  
+  // User management states
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [newUser, setNewUser] = useState({ email: "", name: "", password: "" });
+  const [newPassword, setNewPassword] = useState({ password: "", confirmPassword: "" });
+  const [userActionLoading, setUserActionLoading] = useState(false);
 
   // Check authentication on component mount
   useEffect(() => {
@@ -115,9 +137,10 @@ export default function AdminPage() {
 
     const fetchData = async () => {
       try {
-        const [applicationsRes, teamsRes] = await Promise.all([
+        const [applicationsRes, teamsRes, usersRes] = await Promise.all([
           fetch("/api/admin/applications"),
-          fetch("/api/teams")
+          fetch("/api/teams"),
+          fetch("/api/admin/users")
         ]);
 
         if (applicationsRes.ok) {
@@ -128,6 +151,11 @@ export default function AdminPage() {
         if (teamsRes.ok) {
           const teamsData = await teamsRes.json();
           setTeams(teamsData);
+        }
+
+        if (usersRes.ok) {
+          const usersData = await usersRes.json();
+          setUsers(usersData);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -170,6 +198,108 @@ export default function AdminPage() {
     }
   };
 
+  // User management functions
+  const handleAddUser = async () => {
+    if (!newUser.email || !newUser.name || !newUser.password) {
+      alert("Lütfen tüm alanları doldurun");
+      return;
+    }
+
+    console.log('Sending user data:', newUser);
+    setUserActionLoading(true);
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newUser),
+      });
+
+      if (response.ok) {
+        const usersRes = await fetch("/api/admin/users");
+        if (usersRes.ok) {
+          const usersData = await usersRes.json();
+          setUsers(usersData);
+        }
+        setNewUser({ email: "", name: "", password: "" });
+        setShowAddUserDialog(false);
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || "Kullanıcı eklenirken hata oluştu");
+      }
+    } catch (error) {
+      console.error("Error adding user:", error);
+      alert("Kullanıcı eklenirken hata oluştu");
+    } finally {
+      setUserActionLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword.password || !selectedUser) {
+      alert("Lütfen yeni şifreyi girin");
+      return;
+    }
+
+    if (newPassword.password !== newPassword.confirmPassword) {
+      alert("Şifreler eşleşmiyor");
+      return;
+    }
+
+    setUserActionLoading(true);
+    try {
+      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "change_password", password: newPassword.password }),
+      });
+
+      if (response.ok) {
+        setNewPassword({ password: "", confirmPassword: "" });
+        setShowChangePasswordDialog(false);
+        setSelectedUser(null);
+        alert("Şifre başarıyla değiştirildi");
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || "Şifre değiştirilirken hata oluştu");
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      alert("Şifre değiştirilirken hata oluştu");
+    } finally {
+      setUserActionLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("Bu kullanıcıyı silmek istediğinizden emin misiniz?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        const usersRes = await fetch("/api/admin/users");
+        if (usersRes.ok) {
+          const usersData = await usersRes.json();
+          setUsers(usersData);
+        }
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || "Kullanıcı silinirken hata oluştu");
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      alert("Kullanıcı silinirken hata oluştu");
+    }
+  };
+
   // Filter applications
   const filteredApplications = applications.filter((app) => {
     const matchesSearch = 
@@ -185,6 +315,12 @@ export default function AdminPage() {
   const filteredTeams = teams.filter((team) =>
     team.teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     team.coachName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Filter users
+  const filteredUsers = users.filter((user) =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusBadge = (status: string) => {
@@ -242,7 +378,7 @@ export default function AdminPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center">
@@ -296,6 +432,18 @@ export default function AdminPage() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <UserPlus className="h-8 w-8 text-purple-600 mr-3" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+                  <p className="text-sm text-gray-600">Admin Kullanıcı</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -324,6 +472,17 @@ export default function AdminPage() {
             <Users className="inline mr-2 h-4 w-4" />
             Takımlar ({teams.length})
           </button>
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === "users"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            <UserPlus className="inline mr-2 h-4 w-4" />
+            Kullanıcılar ({users.length})
+          </button>
         </div>
       </div>
 
@@ -336,7 +495,13 @@ export default function AdminPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Takım adı veya hoca adı ile ara..."
+              placeholder={
+                activeTab === "applications" 
+                  ? "Takım adı veya hoca adı ile ara..."
+                  : activeTab === "teams"
+                  ? "Takım adı veya hoca adı ile ara..."
+                  : "Kullanıcı adı veya email ile ara..."
+              }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -625,6 +790,214 @@ export default function AdminPage() {
               </Card>
             ))
           )}
+        </div>
+      )}
+
+      {/* Users Tab */}
+      {activeTab === "users" && (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Admin Kullanıcıları</h2>
+            <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  Kullanıcı Ekle
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Yeni Admin Kullanıcısı Ekle</DialogTitle>
+                  <DialogDescription>
+                    Yeni bir admin kullanıcısı oluşturun.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Ad Soyad</Label>
+                    <Input
+                      id="name"
+                      value={newUser.name}
+                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                      placeholder="Ad Soyad"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="password">Şifre</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      placeholder="Güçlü bir şifre girin"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowAddUserDialog(false);
+                        setNewUser({ name: "", email: "", password: "" });
+                      }}
+                    >
+                      İptal
+                    </Button>
+                    <Button
+                      onClick={handleAddUser}
+                      disabled={userActionLoading || !newUser.name || !newUser.email || !newUser.password}
+                    >
+                      {userActionLoading ? "Ekleniyor..." : "Kullanıcı Ekle"}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredUsers.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <UserPlus className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {users.length === 0 ? "Henüz kullanıcı bulunmuyor" : "Arama kriterlerinize uygun kullanıcı bulunamadı"}
+                </h3>
+              </div>
+            ) : (
+              filteredUsers.map((user) => (
+                <Card key={user.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{user.name}</CardTitle>
+                        <CardDescription className="flex items-center mt-1">
+                          <Mail className="mr-1 h-3 w-3" />
+                          {user.email}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center text-xs text-gray-500 pt-2 border-t">
+                        <Calendar className="mr-1 h-3 w-3" />
+                        Oluşturulma: {new Date(user.createdAt).toLocaleDateString("tr-TR")}
+                      </div>
+                      
+                      <div className="flex gap-2 pt-2">
+                        <Dialog open={showChangePasswordDialog && selectedUser?.id === user.id} onOpenChange={(open) => {
+                          setShowChangePasswordDialog(open);
+                          if (!open) {
+                            setSelectedUser(null);
+                            setNewPassword({ password: "", confirmPassword: "" });
+                          }
+                        }}>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-1"
+                              onClick={() => setSelectedUser(user)}
+                            >
+                              <Key className="h-3 w-3" />
+                              Şifre Değiştir
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Şifre Değiştir</DialogTitle>
+                              <DialogDescription>
+                                {user.name} kullanıcısının şifresini değiştirin.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor="newPassword">Yeni Şifre</Label>
+                                <Input
+                                  id="newPassword"
+                                  type="password"
+                                  value={newPassword.password}
+                                  onChange={(e) => setNewPassword({ ...newPassword, password: e.target.value })}
+                                  placeholder="Yeni şifre"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="confirmPassword">Şifre Tekrar</Label>
+                                <Input
+                                  id="confirmPassword"
+                                  type="password"
+                                  value={newPassword.confirmPassword}
+                                  onChange={(e) => setNewPassword({ ...newPassword, confirmPassword: e.target.value })}
+                                  placeholder="Şifre tekrar"
+                                />
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => {
+                                    setShowChangePasswordDialog(false);
+                                    setSelectedUser(null);
+                                    setNewPassword({ password: "", confirmPassword: "" });
+                                  }}
+                                >
+                                  İptal
+                                </Button>
+                                <Button
+                                  onClick={handleChangePassword}
+                                  disabled={userActionLoading || !newPassword.password || newPassword.password !== newPassword.confirmPassword}
+                                >
+                                  {userActionLoading ? "Değiştiriliyor..." : "Şifre Değiştir"}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Sil
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Kullanıcıyı Sil</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {user.name} kullanıcısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>İptal</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Sil
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>

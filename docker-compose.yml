@@ -33,7 +33,7 @@ services:
     depends_on:
       - postgres
     volumes:
-      - ./public/uploads:/app/public/uploads
+      - ./public/uploads:/app/public/uploads:rw
     networks:
       - omt-network
     command: >
