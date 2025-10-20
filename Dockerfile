@@ -1,5 +1,8 @@
-# Use the official Node.js 18 image as base
-FROM node:18-alpine AS base
+# Use existing Redis Alpine image and install Node.js
+FROM redis:7-alpine AS base
+
+# Install Node.js and npm
+RUN apk add --no-cache nodejs npm
 
 # Install dependencies including dev dependencies for build
 FROM base AS deps
