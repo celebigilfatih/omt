@@ -36,6 +36,9 @@ enum AgeGroup {
 enum Stage {
   STAGE_1
   STAGE_2
+  STAGE_3
+  STAGE_4
+  FINAL
 }
 
 // Takım başvuruları tablosu
@@ -50,6 +53,7 @@ model TeamApplication {
   facebook    String?
   stage       Stage
   ageGroups   AgeGroup[]
+  ageGroupTeamCounts Json?
   description String?
   logoUrl     String?
   status      ApplicationStatus @default(PENDING)
@@ -70,6 +74,7 @@ model Team {
   phoneNumber      String
   stage            Stage
   ageGroups        AgeGroup[]
+  ageGroupTeamCounts Json?
   description      String?
   logoUrl          String?
   createdAt        DateTime   @default(now())

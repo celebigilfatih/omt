@@ -1,4 +1,15 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+
 export function Footer() {
+  const pathname = usePathname();
+
+  // Admin login sayfasında footer'ı gizle
+  if (pathname === "/admin/login") {
+    return null;
+  }
+
   return (
     <footer className="border-t bg-gray-50 mt-auto">
       <div className="container mx-auto px-4 py-6">

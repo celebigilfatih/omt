@@ -12,13 +12,25 @@ const applicationSchema = z.object({
   facebook: z.string().optional(),
   stage: z.enum(['STAGE_1', 'STAGE_2']),
   ageGroups: z.array(z.enum(['Y2012', 'Y2013', 'Y2014', 'Y2015', 'Y2016', 'Y2017', 'Y2018', 'Y2019', 'Y2020', 'Y2021', 'Y2022'])),
+  ageGroupTeamCounts: z.record(z.string(), z.number()).optional(),
   description: z.string().optional(),
   logoUrl: z.string().optional(),
 })
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    let body;
+    try {
+      body = await request.json()
+    } catch (jsonError) {
+      console.error('JSON parse hatası:', jsonError)
+      return NextResponse.json(
+        { error: 'Geçersiz JSON formatı' },
+        { status: 400 }
+      )
+    }
+    
+    console.log('Gelen veri:', body)
     const validatedData = applicationSchema.parse(body)
 
     const application = await prisma.teamApplication.create({

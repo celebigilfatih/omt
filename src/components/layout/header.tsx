@@ -15,6 +15,11 @@ const navigation = [
 export function Header() {
   const pathname = usePathname();
 
+  // Admin login sayfasında header'ı gizle
+  if (pathname === "/admin/login") {
+    return null;
+  }
+
   return (
     <header className="border-b bg-white shadow-sm">
       <div className="container mx-auto px-4">
