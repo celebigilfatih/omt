@@ -182,6 +182,31 @@ export default function AdminPage() {
     }
   };
 
+  // Handle application deletion
+  const handleDeleteApplication = async (applicationId: string) => {
+    try {
+      const response = await fetch(`/api/admin/applications/${applicationId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        // Refresh data
+        const applicationsRes = await fetch("/api/admin/applications");
+        
+        if (applicationsRes.ok) {
+          const applicationsData = await applicationsRes.json();
+          setApplications(applicationsData);
+        }
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || "Başvuru silinirken hata oluştu");
+      }
+    } catch (error) {
+      console.error("Error deleting application:", error);
+      alert("Başvuru silinirken hata oluştu");
+    }
+  };
+
   // User management functions
   const handleAddUser = async () => {
     if (!newUser.email || !newUser.name || !newUser.password) {
@@ -684,6 +709,37 @@ export default function AdminPage() {
                                   className="bg-red-600 hover:bg-red-700"
                                 >
                                   Reddet
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
+
+                      {application.status === "REJECTED" && (
+                        <div className="flex gap-2">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Sil
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Başvuruyu Sil</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {application.teamName} takımının reddedilen başvurusunu silmek istediğinizden emin misiniz?
+                                  Bu işlem geri alınamaz ve başvuru kalıcı olarak silinecektir.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>İptal</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteApplication(application.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Sil
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

@@ -93,3 +93,45 @@ export async function PATCH(
     )
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    // Check if application exists
+    const application = await prisma.teamApplication.findUnique({
+      where: { id },
+    })
+
+    if (!application) {
+      return NextResponse.json(
+        { error: 'Başvuru bulunamadı' },
+        { status: 404 }
+      )
+    }
+
+    // Only allow deletion of rejected applications
+    if (application.status !== ApplicationStatus.REJECTED) {
+      return NextResponse.json(
+        { error: 'Sadece reddedilen başvurular silinebilir' },
+        { status: 400 }
+      )
+    }
+
+    // Delete the application
+    await prisma.teamApplication.delete({
+      where: { id }
+    })
+
+    return NextResponse.json({ message: 'Başvuru başarıyla silindi' })
+  } catch (error) {
+    console.error('Başvuru silme hatası:', error)
+    return NextResponse.json(
+      { error: 'Başvuru silinemedi' },
+      { status: 500 }
+    )
+  }
+}
