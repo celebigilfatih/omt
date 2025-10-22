@@ -74,6 +74,7 @@ logs
 
 # Docker
 .dockerignore
+docker-compose.yml
 
 # Temporary files
 *.tmp

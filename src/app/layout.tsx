@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Turnuva Yönetim Sistemi",
-  description: "Turnuva katılım ve takım yönetim sistemi",
+  title: "Turnuva Katılım Sistemi",
+  description: "Turnuva katılım ve takım yönetim sistemi bir spormange ürünüdür.",
 };
 
 export default function RootLayout({
