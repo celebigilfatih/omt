@@ -12,7 +12,7 @@ import { validateAdminCredentials, setAdminSession } from "@/lib/auth";
 
 export default function AdminLoginPage() {
   const [credentials, setCredentials] = useState({
-    username: "",
+    email: "",
     password: ""
   });
   const [error, setError] = useState("");
@@ -24,14 +24,18 @@ export default function AdminLoginPage() {
     setIsLoading(true);
     setError("");
 
-    // Simulate a small delay for better UX
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    if (validateAdminCredentials(credentials)) {
-      setAdminSession();
-      router.push("/admin");
-    } else {
-      setError("Geçersiz kullanıcı adı veya şifre");
+    try {
+      const result = await validateAdminCredentials(credentials);
+      
+      if (result.success && result.user) {
+        setAdminSession(result.user);
+        router.push("/admin");
+      } else {
+        setError(result.error || "Geçersiz email veya şifre");
+      }
+    } catch (error) {
+      console.error("Giriş hatası:", error);
+      setError("Bağlantı hatası oluştu");
     }
 
     setIsLoading(false);
@@ -66,17 +70,17 @@ export default function AdminLoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-sm font-medium text-gray-700">
-                Kullanıcı Adı
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                Email / Kullanıcı Adı
               </Label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  id="username"
+                  id="email"
                   type="text"
-                  placeholder="Kullanıcı adınızı girin"
-                  value={credentials.username}
-                  onChange={(e) => handleInputChange("username", e.target.value)}
+                  placeholder="Email adresinizi veya kullanıcı adınızı girin"
+                  value={credentials.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
                   className="pl-10"
                   required
                 />
