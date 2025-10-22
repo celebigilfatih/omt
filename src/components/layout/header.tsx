@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Trophy, Users, Settings, FileText } from "lucide-react";
+import { Trophy, Users, Settings, FileText, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navigation = [
@@ -14,11 +15,20 @@ const navigation = [
 
 export function Header() {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Admin login sayfasında header'ı gizle
   if (pathname === "/admin/login") {
     return null;
   }
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <header className="border-b bg-white shadow-sm">
@@ -31,6 +41,7 @@ export function Header() {
             </h1>
           </div>
           
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
             {navigation.map((item) => {
               const Icon = item.icon;
@@ -50,13 +61,51 @@ export function Header() {
             })}
           </nav>
           
-          {/* Mobile menu button - can be expanded later */}
+          {/* Mobile menu button */}
           <div className="md:hidden">
-            <Button variant="ghost" size="sm">
-              Menu
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={toggleMobileMenu}
+              className="p-2"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </Button>
           </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t bg-white">
+            <nav className="px-2 pt-2 pb-3 space-y-1">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                
+                return (
+                  <Link 
+                    key={item.name} 
+                    href={item.href}
+                    onClick={closeMobileMenu}
+                    className="block"
+                  >
+                    <Button
+                      variant={isActive ? "default" : "ghost"}
+                      className="w-full justify-start flex items-center space-x-2"
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.name}</span>
+                    </Button>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
