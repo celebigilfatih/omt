@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 const navigation = [
   { name: "Ana Sayfa", href: "/", icon: Trophy },
   { name: "Başvuru Yap", href: "/basvuru", icon: FileText },
-  { name: "Katılımcı Takımlar", href: "/takimlar", icon: Users },
+  { name: "Takım Yönetimi", href: "/teams", icon: Users },
   { name: "Yönetici Paneli", href: "/admin", icon: Settings },
 ];
 

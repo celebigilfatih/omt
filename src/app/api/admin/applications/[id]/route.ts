@@ -76,6 +76,7 @@ export async function PATCH(
           phoneNumber: application.phoneNumber,
           stage: application.stage,
           ageGroups: application.ageGroups,
+          ageGroupTeamCounts: application.ageGroupTeamCounts || {},
           description: application.description,
           logoUrl: application.logoUrl,
           applicationId: application.id,

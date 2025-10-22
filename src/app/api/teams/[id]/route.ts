@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
-    const { teamName, coachName, phoneNumber, stage, ageGroups, ageGroupTeamCounts, description } = await request.json();
+    const { teamName, coachName, phoneNumber, stage, ageGroups, ageGroupTeamCounts, description, logoUrl } = await request.json();
 
     if (!teamName || !coachName || !phoneNumber || !stage) {
       return NextResponse.json(
@@ -13,22 +17,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       );
     }
 
-    const updateData: any = {
-      teamName,
-      coachName,
-      phoneNumber,
-      stage,
-      ageGroups,
-      description: description || null,
-    };
-
-    if (ageGroupTeamCounts) {
-      updateData.ageGroupTeamCounts = ageGroupTeamCounts;
-    }
-
     const updatedTeam = await prisma.team.update({
       where: { id },
-      data: updateData
+      data: {
+        teamName,
+        coachName,
+        phoneNumber,
+        stage,
+        ageGroups,
+        ageGroupTeamCounts: ageGroupTeamCounts as Prisma.InputJsonValue,
+        description: description || null,
+        logoUrl: logoUrl || null,
+      }
     });
 
     return NextResponse.json(updatedTeam);
@@ -41,7 +41,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
     await prisma.team.delete({
