@@ -282,15 +282,21 @@ export default function TeamsPage() {
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-orange-600">
-                  {teams.filter(t => t.stage === "FINAL").length}
+                  {teams.filter(t => t.stage === "STAGE_2").length}
                 </div>
-                <div className="text-sm text-gray-600">Final</div>
+                <div className="text-sm text-gray-600">2. Etap</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">
                   {filteredTeams.length}
                 </div>
                 <div className="text-sm text-gray-600">Filtrelenmiş</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-indigo-600">
+                  {teams.reduce((total, team) => total + team.ageGroups.length, 0)}
+                </div>
+                <div className="text-sm text-gray-600">Toplam Yaş Grupları</div>
               </div>
             </div>
           </CardContent>

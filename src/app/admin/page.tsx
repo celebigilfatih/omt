@@ -384,7 +384,7 @@ export default function AdminPage() {
             <Trophy className="mr-3 h-8 w-8 text-blue-600" />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Yönetici Paneli</h1>
-              <p className="text-gray-600">Başvuru onaylama ve kullanıcı yönetimi</p>
+              <p className="text-gray-600">Başvuru onaylama ve kullanıcı yönetimi bir spormanage yazılımıdır.</p>
             </div>
           </div>
           <Button 
