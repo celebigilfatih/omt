@@ -13,7 +13,8 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileSpreadsheet
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { isAdminAuthenticated, clearAdminSession } from "@/lib/auth";
+import * as XLSX from "xlsx";
 
 interface Team {
   id: string;
@@ -218,6 +220,32 @@ export default function TeamsPage() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedTeams = sortedTeams.slice(startIndex, startIndex + itemsPerPage);
 
+  const exportToExcel = () => {
+    const rows = filteredTeams.map((team) => {
+      const stageLabel = STAGES.find(s => s.value === team.stage)?.label || team.stage;
+      const ageGroupLabels = team.ageGroups.map(ag => AGE_GROUPS.find(x => x.value === ag)?.label).filter(Boolean).join(", ");
+      const ageGroupCounts = team.ageGroups.map(ag => {
+        const label = AGE_GROUPS.find(x => x.value === ag)?.label;
+        const count = team.ageGroupTeamCounts?.[ag] ?? 1;
+        return `${label}: ${count}`;
+      }).join(", ");
+      return {
+        "Takım Adı": team.teamName,
+        "Antrenör": team.coachName,
+        "Telefon": team.phoneNumber,
+        "Etap": stageLabel,
+        "Yaş Grupları": ageGroupLabels,
+        "Yaş Grubu Takım Sayıları": ageGroupCounts,
+        "Durum": team.status || "",
+        "Oluşturulma": new Date(team.createdAt).toLocaleString("tr-TR")
+      };
+    });
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Takımlar");
+    XLSX.writeFile(workbook, "takimlar.xlsx");
+  };
+
   const handleSort = (field: keyof Team) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -341,17 +369,23 @@ export default function TeamsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm("");
-                  setStageFilter("");
-                  setAgeGroupFilter("");
-                }}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtreleri Temizle
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setStageFilter("");
+                    setAgeGroupFilter("");
+                  }}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtreleri Temizle
+                </Button>
+                <Button onClick={exportToExcel}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Excel'e Aktar
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
