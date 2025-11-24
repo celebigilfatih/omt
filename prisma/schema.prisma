@@ -41,6 +41,16 @@ enum Stage {
   FINAL
 }
 
+// Ödeme yöntemleri için enum
+enum PaymentMethod {
+  POS
+  IBAN
+  CASH
+  HAND_DELIVERY
+  MAIL_ORDER
+  HOTEL_PAYMENT
+}
+
 // Takım başvuruları tablosu
 model TeamApplication {
   id          String            @id @default(cuid())
@@ -54,6 +64,8 @@ model TeamApplication {
   stage       Stage
   ageGroups   AgeGroup[]
   ageGroupTeamCounts Json?
+  athletePrice Float
+  parentPrice  Float
   description String?
   logoUrl     String?
   status      ApplicationStatus @default(PENDING)
@@ -75,6 +87,8 @@ model Team {
   stage            Stage
   ageGroups        AgeGroup[]
   ageGroupTeamCounts Json?
+  athletePrice     Float
+  parentPrice      Float
   description      String?
   logoUrl          String?
   createdAt        DateTime   @default(now())
@@ -83,6 +97,9 @@ model Team {
   // Başvuru ile ilişki (opsiyonel, manuel eklenen takımlar için)
   applicationId    String?    @unique
   application      TeamApplication? @relation(fields: [applicationId], references: [id])
+  
+  // Ödemeler ile ilişki
+  payments         Payment[]
 
   @@map("teams")
 }
@@ -111,4 +128,18 @@ model Settings {
   updatedAt            DateTime @updatedAt
 
   @@map("settings")
+}
+
+// Ödemeler tablosu
+model Payment {
+  id            String        @id @default(cuid())
+  teamId        String
+  team          Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  paymentMethod PaymentMethod
+  amount        Float
+  description   String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("payments")
 }

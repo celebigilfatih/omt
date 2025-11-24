@@ -13,6 +13,8 @@ const applicationSchema = z.object({
   stage: z.enum(['STAGE_1', 'STAGE_2']),
   ageGroups: z.array(z.enum(['Y2012', 'Y2013', 'Y2014', 'Y2015', 'Y2016', 'Y2017', 'Y2018', 'Y2019', 'Y2020', 'Y2021', 'Y2022'])),
   ageGroupTeamCounts: z.record(z.string(), z.number()).optional(),
+  athletePrice: z.number(),
+  parentPrice: z.number(),
   description: z.string().optional(),
   logoUrl: z.string().optional(),
 })

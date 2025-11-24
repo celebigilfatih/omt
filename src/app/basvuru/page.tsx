@@ -34,6 +34,8 @@ const formSchema = z.object({
   }),
   ageGroups: z.array(z.enum(["Y2012", "Y2013", "Y2014", "Y2015", "Y2016", "Y2017", "Y2018", "Y2019", "Y2020", "Y2021", "Y2022"])).min(1, "En az bir yaş grubu seçiniz"),
   ageGroupTeamCounts: z.record(z.string(), z.number().min(1, "Takım sayısı en az 1 olmalıdır").max(10, "Takım sayısı en fazla 10 olabilir")).optional(),
+  athletePrice: z.coerce.number().min(0, "Sporcu fiyatı 0'dan küçük olamaz"),
+  parentPrice: z.coerce.number().min(0, "Veli fiyatı 0'dan küçük olamaz"),
   description: z.string().max(500, "Açıklama en fazla 500 karakter olabilir").optional(),
 });
 
@@ -57,6 +59,8 @@ export default function ApplicationPage() {
       stage: undefined,
       ageGroups: [],
       ageGroupTeamCounts: {},
+      athletePrice: 0,
+      parentPrice: 0,
       description: "",
     },
   });
@@ -221,6 +225,46 @@ export default function ApplicationPage() {
                             <FormLabel>İletişim Bilgileri</FormLabel>
                             <FormControl>
                               <Input placeholder="0555 123 45 67" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="athletePrice"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Sporcu Fiyatı (₺)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                placeholder="0" 
+                                min="0"
+                                step="0.01"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="parentPrice"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Veli Fiyatı (₺)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                placeholder="0" 
+                                min="0"
+                                step="0.01"
+                                {...field} 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
