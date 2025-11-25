@@ -29,7 +29,7 @@ export default function AdminLoginPage() {
       
       if (result.success && result.user) {
         setAdminSession(result.user);
-        router.push("/admin");
+        router.push("/");
       } else {
         setError(result.error || "Geçersiz email veya şifre");
       }
@@ -59,7 +59,7 @@ export default function AdminLoginPage() {
           </div>
           <div>
             <CardTitle className="text-2xl font-bold text-gray-900">
-              Yönetici Paneli
+              Başvuru Yönetimi
             </CardTitle>
             <CardDescription className="text-gray-600">
               Devam etmek için giriş yapın

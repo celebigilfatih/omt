@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Trophy, Users, Settings, FileText, Menu, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Trophy, Users, Settings, FileText, Menu, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TurkishLiraIcon } from "@/components/icons/TurkishLiraIcon";
 
@@ -12,11 +12,12 @@ const navigation = [
   { name: "Başvuru Yap", href: "/basvuru", icon: FileText },
   { name: "Takım Yönetimi", href: "/teams", icon: Users },
   { name: "Ödeme Yönetimi", href: "/payments", icon: TurkishLiraIcon },
-  { name: "Yönetici Paneli", href: "/admin", icon: Settings },
+  { name: "Başvuru Yönetimi", href: "/admin", icon: Settings },
 ];
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Admin login sayfasında header'ı gizle
@@ -30,6 +31,15 @@ export function Header() {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    // Clear admin session
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('adminSession');
+    }
+    // Redirect to login page
+    router.push('/admin/login');
   };
 
   return (
@@ -61,6 +71,15 @@ export function Header() {
                 </Link>
               );
             })}
+            {/* Logout Button */}
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="flex items-center space-x-2 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Çıkış Yap</span>
+            </Button>
           </nav>
           
           {/* Mobile menu button */}
@@ -105,6 +124,18 @@ export function Header() {
                   </Link>
                 );
               })}
+              {/* Mobile Logout Button */}
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  closeMobileMenu();
+                  handleLogout();
+                }}
+                className="w-full justify-start flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Çıkış Yap</span>
+              </Button>
             </nav>
           </div>
         )}

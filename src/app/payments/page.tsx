@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DollarSign, Plus, Search, Calendar, Pencil, Trash2 } from "lucide-react";
+import { DollarSign, Plus, Search, Calendar, Pencil, Trash2, FileText } from "lucide-react";
 import { isAdminAuthenticated } from "@/lib/auth";
 
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,7 @@ export default function PaymentsPage() {
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   
   // Form states
+  const [selectedStage, setSelectedStage] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -108,9 +109,19 @@ export default function PaymentsPage() {
     fetchData();
   }, []);
 
+  const handleStageSelect = (stage: string) => {
+    setSelectedStage(stage);
+    // Reset team selection when stage changes
+    setSelectedTeamId("");
+    setSelectedTeam(null);
+  };
+
   const handleTeamSelect = (teamId: string) => {
     setSelectedTeamId(teamId);
-    const team = teams.find(t => t.id === teamId);
+    const stageFilteredTeams = selectedStage 
+      ? teams.filter(team => team.stage === selectedStage)
+      : teams;
+    const team = stageFilteredTeams.find((t: Team) => t.id === teamId);
     setSelectedTeam(team || null);
   };
 
@@ -137,6 +148,7 @@ export default function PaymentsPage() {
         setPayments([newPayment, ...payments]);
         
         // Reset all form fields including team selection
+        setSelectedStage("");
         setSelectedTeamId("");
         setSelectedTeam(null);
         setPaymentMethod("");
@@ -264,7 +276,119 @@ export default function PaymentsPage() {
     getStageLabel(payment.team.stage).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Filter teams by selected stage
+  const filteredTeamsByStage = selectedStage 
+    ? teams.filter(team => team.stage === selectedStage)
+    : teams;
+
   const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const filteredTotalAmount = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
+
+  const generatePDFReport = () => {
+    // Create PDF content as HTML
+    const reportContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Ödeme Raporu</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; }
+          h1 { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .summary { background: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0; }
+          .summary-item { display: inline-block; margin: 10px 20px; }
+          .summary-label { font-weight: bold; color: #6b7280; }
+          .summary-value { font-size: 18px; color: #1f2937; font-weight: bold; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { background: #2563eb; color: white; padding: 12px; text-align: left; }
+          td { padding: 10px; border-bottom: 1px solid #e5e7eb; }
+          tr:hover { background: #f9fafb; }
+          .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+          .method-POS { background: #dbeafe; color: #1e40af; }
+          .method-IBAN { background: #d1fae5; color: #065f46; }
+          .method-CASH { background: #fef3c7; color: #92400e; }
+          .method-HAND_DELIVERY { background: #e9d5ff; color: #6b21a8; }
+          .method-MAIL_ORDER { background: #fce7f3; color: #9f1239; }
+          .method-HOTEL_PAYMENT { background: #fed7aa; color: #9a3412; }
+          .footer { margin-top: 30px; text-align: center; color: #6b7280; font-size: 12px; }
+          @media print { body { margin: 20px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Ödeme Raporu</h1>
+          <p>Oluşturma Tarihi: ${new Date().toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+        </div>
+        
+        <div class="summary">
+          <div class="summary-item">
+            <div class="summary-label">Toplam Ödeme</div>
+            <div class="summary-value">${filteredPayments.length} Adet</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Toplam Tutar</div>
+            <div class="summary-value">₺${filteredTotalAmount.toFixed(2)}</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Kayıtlı Takım</div>
+            <div class="summary-value">${teams.length} Takım</div>
+          </div>
+        </div>
+
+        <h2>Ödeme Kayıtları</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Tarih</th>
+              <th>Takım</th>
+              <th>Antrenör</th>
+              <th>Etap</th>
+              <th>Ödeme Yöntemi</th>
+              <th>Tutar</th>
+              <th>Açıklama</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredPayments.map(payment => `
+              <tr>
+                <td>${new Date(payment.createdAt).toLocaleDateString('tr-TR')}</td>
+                <td>${payment.team.teamName}</td>
+                <td>${payment.team.coachName}</td>
+                <td>${getStageLabel(payment.team.stage)}</td>
+                <td><span class="badge method-${payment.paymentMethod}">${getPaymentMethodLabel(payment.paymentMethod)}</span></td>
+                <td>₺${payment.amount.toFixed(2)}</td>
+                <td>${payment.description || '-'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="background: #f3f4f6; font-weight: bold;">
+              <td colspan="5" style="text-align: right; padding: 12px;">TOPLAM:</td>
+              <td style="padding: 12px; color: #059669; font-size: 16px;">₺${filteredTotalAmount.toFixed(2)}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div class="footer">
+          <p>Turnuva Yönetim Sistemi - Ödeme Raporu</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Open print dialog with the content
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(reportContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+  };
 
   // Calculate payment summary by team
   const teamPaymentSummary = payments.reduce((acc, payment) => {
@@ -368,13 +492,23 @@ export default function PaymentsPage() {
                 />
               </div>
 
-              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                <DialogTrigger asChild>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Yeni Ödeme
-                  </Button>
-                </DialogTrigger>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={generatePDFReport}
+                  variant="outline"
+                  className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Raporla
+                </Button>
+                
+                <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Yeni Ödeme
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
                     <DialogTitle>Yeni Ödeme Kaydı</DialogTitle>
@@ -385,13 +519,31 @@ export default function PaymentsPage() {
 
                   <form onSubmit={handleSubmitPayment} className="space-y-4 mt-4">
                     <div>
-                      <Label htmlFor="team">Takım *</Label>
-                      <Select value={selectedTeamId} onValueChange={handleTeamSelect} required>
-                        <SelectTrigger id="team">
-                          <SelectValue placeholder="Takım seçiniz" />
+                      <Label htmlFor="stage">Etap *</Label>
+                      <Select value={selectedStage} onValueChange={handleStageSelect} required>
+                        <SelectTrigger id="stage">
+                          <SelectValue placeholder="Etap seçiniz" />
                         </SelectTrigger>
                         <SelectContent>
-                          {teams.map((team) => (
+                          <SelectItem value="STAGE_1">1. Etap</SelectItem>
+                          <SelectItem value="STAGE_2">2. Etap</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="team">Takım *</Label>
+                      <Select 
+                        value={selectedTeamId} 
+                        onValueChange={handleTeamSelect} 
+                        required
+                        disabled={!selectedStage}
+                      >
+                        <SelectTrigger id="team">
+                          <SelectValue placeholder={selectedStage ? "Takım seçiniz" : "Lütfen önce etap seçiniz"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredTeamsByStage.map((team) => (
                             <SelectItem key={team.id} value={team.id}>
                               {team.teamName}
                             </SelectItem>
@@ -460,6 +612,7 @@ export default function PaymentsPage() {
                         variant="outline"
                         onClick={() => {
                           setShowAddDialog(false);
+                          setSelectedStage("");
                           setSelectedTeamId("");
                           setSelectedTeam(null);
                           setPaymentMethod("");
@@ -491,6 +644,7 @@ export default function PaymentsPage() {
                   </form>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -673,6 +827,17 @@ export default function PaymentsPage() {
                         </TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                  <TableBody>
+                    <TableRow className="bg-gray-50 font-bold">
+                      <TableCell colSpan={6} className="text-right">
+                        TOPLAM:
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-green-600 text-lg">
+                        ₺{filteredTotalAmount.toFixed(2)}
+                      </TableCell>
+                      <TableCell colSpan={3}></TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </div>

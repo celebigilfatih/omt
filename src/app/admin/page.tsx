@@ -385,22 +385,14 @@ export default function AdminPage() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4">
           <div className="flex items-center">
             <Trophy className="mr-3 h-8 w-8 text-blue-600" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Yönetici Paneli</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Başvuru Yönetimi</h1>
               <p className="text-gray-600">Başvuru onaylama ve kullanıcı yönetimi bir spormanage yazılımıdır.</p>
             </div>
           </div>
-          <Button 
-            onClick={handleLogout}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Çıkış Yap
-          </Button>
         </div>
 
         {/* Stats */}
