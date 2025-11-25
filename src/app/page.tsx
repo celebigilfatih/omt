@@ -7,7 +7,6 @@ import {
   Shield, 
   Users, 
   FileText, 
-  DollarSign, 
   Calendar,
   CheckCircle,
   XCircle,
@@ -20,6 +19,7 @@ import { isAdminAuthenticated } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { TurkishLiraIcon } from "@/components/icons/TurkishLiraIcon";
 
 interface DashboardStats {
   totalTeams: number;
@@ -31,6 +31,8 @@ interface DashboardStats {
   totalPaymentAmount: number;
   stage1Teams: number;
   stage2Teams: number;
+  stage1TotalTeamCount: number;
+  stage2TotalTeamCount: number;
 }
 
 export default function Home() {
@@ -48,6 +50,8 @@ export default function Home() {
     totalPaymentAmount: 0,
     stage1Teams: 0,
     stage2Teams: 0,
+    stage1TotalTeamCount: 0,
+    stage2TotalTeamCount: 0,
   });
 
   useEffect(() => {
@@ -61,40 +65,92 @@ export default function Home() {
       const authenticated = isAdminAuthenticated();
       setIsAuthenticated(authenticated);
 
-      if (authenticated) {
-        // Fetch dashboard statistics
-        try {
-          const [teamsRes, applicationsRes, paymentsRes] = await Promise.all([
-            fetch("/api/teams"),
-            fetch("/api/admin/applications"),
-            fetch("/api/payments")
-          ]);
-
-          const teams = teamsRes.ok ? await teamsRes.json() : [];
-          const applications = applicationsRes.ok ? await applicationsRes.json() : [];
-          const payments = paymentsRes.ok ? await paymentsRes.json() : [];
-
-          setStats({
-            totalTeams: teams.length,
-            totalApplications: applications.length,
-            pendingApplications: applications.filter((app: any) => app.status === "PENDING").length,
-            approvedApplications: applications.filter((app: any) => app.status === "APPROVED").length,
-            rejectedApplications: applications.filter((app: any) => app.status === "REJECTED").length,
-            totalPayments: payments.length,
-            totalPaymentAmount: payments.reduce((sum: number, payment: any) => sum + payment.amount, 0),
-            stage1Teams: teams.filter((team: any) => team.stage === "STAGE_1").length,
-            stage2Teams: teams.filter((team: any) => team.stage === "STAGE_2").length,
-          });
-        } catch (error) {
-          console.error("Error fetching dashboard stats:", error);
-        }
+      if (!authenticated) {
+        // Giriş yapılmamışsa login sayfasına yönlendir
+        router.push("/admin/login");
+        return;
       }
 
+      // Giriş yapılmışsa istatistikleri yükle
+      await loadStats();
       setIsLoading(false);
     };
 
     checkAuth();
-  }, [isMounted]);
+  }, [isMounted, router]);
+
+  // Verileri yükleyen fonksiyon
+  const loadStats = async () => {
+    try {
+      const [teamsRes, applicationsRes, paymentsRes] = await Promise.all([
+        fetch("/api/teams"),
+        fetch("/api/admin/applications"),
+        fetch("/api/payments")
+      ]);
+
+      const teams = teamsRes.ok ? await teamsRes.json() : [];
+      const applications = applicationsRes.ok ? await applicationsRes.json() : [];
+      const payments = paymentsRes.ok ? await paymentsRes.json() : [];
+
+      const stage1Teams = teams.filter((team: any) => team.stage === "STAGE_1");
+      const stage2Teams = teams.filter((team: any) => team.stage === "STAGE_2");
+
+      // Her etap için toplam takım sayısını hesapla (ageGroupTeamCounts toplamı)
+      const stage1TotalTeamCount = stage1Teams.reduce((sum: number, team: any) => {
+        if (team.ageGroupTeamCounts) {
+          return sum + Object.values(team.ageGroupTeamCounts).reduce((total: number, count: any) => total + count, 0);
+        }
+        return sum + (team.ageGroups?.length || 1);
+      }, 0);
+
+      const stage2TotalTeamCount = stage2Teams.reduce((sum: number, team: any) => {
+        if (team.ageGroupTeamCounts) {
+          return sum + Object.values(team.ageGroupTeamCounts).reduce((total: number, count: any) => total + count, 0);
+        }
+        return sum + (team.ageGroups?.length || 1);
+      }, 0);
+
+      setStats({
+        totalTeams: teams.length,
+        totalApplications: applications.length,
+        pendingApplications: applications.filter((app: any) => app.status === "PENDING").length,
+        approvedApplications: applications.filter((app: any) => app.status === "APPROVED").length,
+        rejectedApplications: applications.filter((app: any) => app.status === "REJECTED").length,
+        totalPayments: payments.length,
+        totalPaymentAmount: payments.reduce((sum: number, payment: any) => sum + payment.amount, 0),
+        stage1Teams: stage1Teams.length,
+        stage2Teams: stage2Teams.length,
+        stage1TotalTeamCount,
+        stage2TotalTeamCount,
+      });
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+    }
+  };
+
+  // Sayfa her görünür olduğunda verileri yenile
+  useEffect(() => {
+    if (!isMounted || !isAuthenticated) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadStats();
+      }
+    };
+
+    // Sayfa her focus aldığında verileri yenile
+    const handleFocus = () => {
+      loadStats();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [isMounted, isAuthenticated]);
 
   if (!isMounted || isLoading) {
     return (
@@ -125,25 +181,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
       <div className="container mx-auto px-4 max-w-7xl">
-        {/* Header */}
+        {/* Welcome Message */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 flex items-center gap-3">
-                <Trophy className="h-10 w-10 text-blue-600" />
-                Turnuva Yönetim Sistemi
-              </h1>
-              <p className="text-gray-600 mt-2 text-lg">Hoş geldiniz! Tüm turnuva işlemlerinizi buradan yönetebilirsiniz.</p>
-            </div>
-            <Button
-              onClick={() => router.push("/admin")}
-              variant="outline"
-              className="gap-2"
-            >
-              Admin Paneli
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <p className="text-gray-600 text-lg">Hoş geldiniz! Tüm turnuva işlemlerinizi buradan yönetebilirsiniz.</p>
         </div>
 
         {/* Quick Stats Overview */}
@@ -177,7 +217,7 @@ export default function Home() {
           <Card className="border-2 border-purple-200 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push("/payments")}>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
+                <TurkishLiraIcon className="h-4 w-4" />
                 Toplam Ödeme
               </CardTitle>
             </CardHeader>
@@ -278,15 +318,17 @@ export default function Home() {
                 <div className="p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border-2 border-blue-300">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold text-blue-900">1. Etap</h3>
-                    <Badge className="bg-blue-600 text-white text-xl px-4 py-2">
-                      {stats.stage1Teams}
-                    </Badge>
+                    <div className="flex gap-2">
+                      <Badge className="bg-blue-600 text-white text-xl px-4 py-2">
+                        {stats.stage1TotalTeamCount} Takım
+                      </Badge>
+                    </div>
                   </div>
-                  <p className="text-sm text-blue-700">Birinci etap takımları</p>
+                  <p className="text-sm text-blue-700">Birinci etap takımları (toplam)</p>
                   <div className="mt-3 bg-blue-200 rounded-full h-3">
                     <div 
                       className="bg-blue-600 h-3 rounded-full transition-all"
-                      style={{ width: `${stats.totalTeams > 0 ? (stats.stage1Teams / stats.totalTeams) * 100 : 0}%` }}
+                      style={{ width: `${(stats.stage1TotalTeamCount + stats.stage2TotalTeamCount) > 0 ? (stats.stage1TotalTeamCount / (stats.stage1TotalTeamCount + stats.stage2TotalTeamCount)) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
@@ -294,15 +336,17 @@ export default function Home() {
                 <div className="p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border-2 border-green-300">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold text-green-900">2. Etap</h3>
-                    <Badge className="bg-green-600 text-white text-xl px-4 py-2">
-                      {stats.stage2Teams}
-                    </Badge>
+                    <div className="flex gap-2">
+                      <Badge className="bg-green-600 text-white text-xl px-4 py-2">
+                        {stats.stage2TotalTeamCount} Takım
+                      </Badge>
+                    </div>
                   </div>
-                  <p className="text-sm text-green-700">İkinci etap takımları</p>
+                  <p className="text-sm text-green-700">İkinci etap takımları (toplam)</p>
                   <div className="mt-3 bg-green-200 rounded-full h-3">
                     <div 
                       className="bg-green-600 h-3 rounded-full transition-all"
-                      style={{ width: `${stats.totalTeams > 0 ? (stats.stage2Teams / stats.totalTeams) * 100 : 0}%` }}
+                      style={{ width: `${(stats.stage1TotalTeamCount + stats.stage2TotalTeamCount) > 0 ? (stats.stage2TotalTeamCount / (stats.stage1TotalTeamCount + stats.stage2TotalTeamCount)) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
@@ -371,7 +415,7 @@ export default function Home() {
                 className="h-auto py-6 flex flex-col items-center gap-3 hover:bg-orange-50 hover:border-orange-300"
                 onClick={() => router.push("/payments")}
               >
-                <DollarSign className="h-8 w-8 text-orange-600" />
+                <TurkishLiraIcon className="h-8 w-8 text-orange-600" />
                 <div className="text-center">
                   <p className="font-semibold">Ödeme Yönetimi</p>
                   <p className="text-xs text-gray-500">Ödemeleri takip et</p>

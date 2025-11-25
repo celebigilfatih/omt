@@ -14,7 +14,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Users
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,8 @@ interface Team {
   stage: string;
   ageGroups: string[];
   ageGroupTeamCounts?: Record<string, number>;
+  athletePrice: number;
+  parentPrice: number;
   description?: string;
   logoUrl?: string;
   status?: string;
@@ -47,9 +50,6 @@ interface Team {
 const STAGES = [
   { value: "STAGE_1", label: "1. Etap" },
   { value: "STAGE_2", label: "2. Etap" },
-  { value: "STAGE_3", label: "3. Etap" },
-  { value: "STAGE_4", label: "4. Etap" },
-  { value: "FINAL", label: "Final" },
 ];
 
 const AGE_GROUPS = [
@@ -60,10 +60,6 @@ const AGE_GROUPS = [
   { value: "Y2016", label: "2016" },
   { value: "Y2017", label: "2017" },
   { value: "Y2018", label: "2018" },
-  { value: "Y2019", label: "2019" },
-  { value: "Y2020", label: "2020" },
-  { value: "Y2021", label: "2021" },
-  { value: "Y2022", label: "2022" },
 ];
 
 export default function TeamsPage() {
@@ -83,6 +79,8 @@ export default function TeamsPage() {
     stage: "",
     ageGroups: [] as string[],
     ageGroupTeamCounts: {} as Record<string, number>,
+    athletePrice: 0,
+    parentPrice: 0,
     description: "",
     logoUrl: ""
   });
@@ -91,6 +89,7 @@ export default function TeamsPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedStageForDetail, setSelectedStageForDetail] = useState<string>("STAGE_1");
 
   // Check authentication
   useEffect(() => {
@@ -129,6 +128,8 @@ export default function TeamsPage() {
       stage: team.stage,
       ageGroups: team.ageGroups,
       ageGroupTeamCounts: team.ageGroupTeamCounts || {},
+      athletePrice: team.athletePrice || 0,
+      parentPrice: team.parentPrice || 0,
       description: team.description || "",
       logoUrl: team.logoUrl || ""
     });
@@ -233,9 +234,14 @@ export default function TeamsPage() {
         "Takım Adı": team.teamName,
         "Antrenör": team.coachName,
         "Telefon": team.phoneNumber,
+        "E-posta": team.email || "",
         "Etap": stageLabel,
         "Yaş Grupları": ageGroupLabels,
         "Yaş Grubu Takım Sayıları": ageGroupCounts,
+        "Sporcu Ücreti (₺)": team.athletePrice?.toFixed(2) || "0.00",
+        "Veli Ücreti (₺)": team.parentPrice?.toFixed(2) || "0.00",
+        "Açıklama": team.description || "",
+        "Logo URL": team.logoUrl || "",
         "Durum": team.status || "",
         "Oluşturulma": new Date(team.createdAt).toLocaleString("tr-TR")
       };
@@ -286,6 +292,112 @@ export default function TeamsPage() {
           >
             Admin Paneline Dön
           </Button>
+        </div>
+
+        {/* Etap ve Yaş Grubu Dağılımı */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Etap Dağılımı */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-blue-600" />
+                Etap Dağılımı
+              </CardTitle>
+              <CardDescription>Takımların etaplara göre dağılımı (Detay için tıklayın)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {STAGES.map((stage) => {
+                  const stageTeams = teams.filter(t => t.stage === stage.value);
+                  const count = stageTeams.length;
+                  const percentage = teams.length > 0 ? (count / teams.length) * 100 : 0;
+                  const isSelected = selectedStageForDetail === stage.value;
+                  
+                  return (
+                    <div 
+                      key={stage.value} 
+                      className={`space-y-2 cursor-pointer p-3 rounded-lg transition-colors ${
+                        isSelected 
+                          ? 'bg-blue-100 border-2 border-blue-400' 
+                          : 'hover:bg-gray-50 border-2 border-transparent'
+                      }`}
+                      onClick={() => setSelectedStageForDetail(stage.value)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${
+                          isSelected ? 'text-blue-900' : 'text-gray-700'
+                        }`}>
+                          {stage.label}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">{count} takım</span>
+                          <Badge variant="outline" className="text-xs">
+                            {percentage.toFixed(0)}%
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all ${
+                            isSelected ? 'bg-blue-700' : 'bg-blue-600'
+                          }`}
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Yaş Grubu Detayları */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-purple-600" />
+                {STAGES.find(s => s.value === selectedStageForDetail)?.label} - Yaş Grubu Takım Sayıları
+              </CardTitle>
+              <CardDescription>Seçili etaptaki yaş grubuna göre dağılım</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
+                {AGE_GROUPS.map((ageGroup) => {
+                  // Seçili etaptaki takımlar için bu yaş grubundaki toplam takım sayısı
+                  const stageTeams = teams.filter(t => t.stage === selectedStageForDetail);
+                  const totalTeamsInAgeGroup = stageTeams.reduce((sum, team) => {
+                    if (team.ageGroups.includes(ageGroup.value)) {
+                      return sum + (team.ageGroupTeamCounts?.[ageGroup.value] || 1);
+                    }
+                    return sum;
+                  }, 0);
+                  
+                  return (
+                    <div 
+                      key={ageGroup.value} 
+                      className={`p-4 rounded-lg border-2 ${
+                        totalTeamsInAgeGroup > 0 
+                          ? 'bg-gradient-to-br from-purple-50 to-blue-50 border-purple-300' 
+                          : 'bg-gray-50 border-gray-200'
+                      }`}
+                    >
+                      <div className="text-xs text-gray-600 mb-1">Yaş Grubu</div>
+                      <div className={`text-2xl font-bold ${
+                        totalTeamsInAgeGroup > 0 ? 'text-purple-600' : 'text-gray-400'
+                      }`}>
+                        {ageGroup.label}
+                      </div>
+                      <div className={`text-sm mt-1 ${
+                        totalTeamsInAgeGroup > 0 ? 'text-gray-700 font-medium' : 'text-gray-500'
+                      }`}>
+                        {totalTeamsInAgeGroup} takım
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Stats Card */}
@@ -498,6 +610,14 @@ export default function TeamsPage() {
                               <div>
                                 <Label className="text-sm font-medium text-gray-500">Etap</Label>
                                 <p className="mt-1">{STAGES.find(s => s.value === team.stage)?.label}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-500">Sporcu Ücreti</Label>
+                                <p className="mt-1 text-blue-600 font-semibold">₺{team.athletePrice?.toFixed(2) || '0.00'}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-500">Veli Ücreti</Label>
+                                <p className="mt-1 text-purple-600 font-semibold">₺{team.parentPrice?.toFixed(2) || '0.00'}</p>
                               </div>
                               <div className="col-span-2">
                                 <Label className="text-sm font-medium text-gray-500">Yaş Grupları</Label>
@@ -822,6 +942,28 @@ export default function TeamsPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label htmlFor="athletePrice">Sporcu Ücreti (₺)</Label>
+                <Input
+                  id="athletePrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editTeamData.athletePrice}
+                  onChange={(e) => setEditTeamData({...editTeamData, athletePrice: parseFloat(e.target.value) || 0})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="parentPrice">Veli Ücreti (₺)</Label>
+                <Input
+                  id="parentPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editTeamData.parentPrice}
+                  onChange={(e) => setEditTeamData({...editTeamData, parentPrice: parseFloat(e.target.value) || 0})}
+                />
               </div>
               <div className="col-span-2">
                 <Label>Yaş Grupları</Label>

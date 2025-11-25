@@ -185,7 +185,7 @@ export default function ApplicationPage() {
               </div>
             ) : (
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-8">
                 {/* Two Column Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   
@@ -198,7 +198,7 @@ export default function ApplicationPage() {
                         name="teamName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Takım Adı</FormLabel>
+                            <FormLabel>Takım Adı *</FormLabel>
                             <FormControl>
                               <Input placeholder="Takım adınızı giriniz" {...field} />
                             </FormControl>
@@ -212,7 +212,7 @@ export default function ApplicationPage() {
                         name="coachName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Sorumlu Hoca (Adı Soyadı)</FormLabel>
+                            <FormLabel>Sorumlu Hoca (Adı Soyadı) *</FormLabel>
                             <FormControl>
                               <Input placeholder="Sorumlu hoca adı soyadı" {...field} />
                             </FormControl>
@@ -226,7 +226,7 @@ export default function ApplicationPage() {
                         name="phoneNumber"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>İletişim Bilgileri</FormLabel>
+                            <FormLabel>İletişim Bilgileri *</FormLabel>
                             <FormControl>
                               <Input placeholder="0555 123 45 67" {...field} />
                             </FormControl>
@@ -247,7 +247,6 @@ export default function ApplicationPage() {
                                 placeholder="Spor ücretini giriniz" 
                                 min="0"
                                 step="0.01"
-                                required
                                 {...field} 
                               />
                             </FormControl>
@@ -268,7 +267,6 @@ export default function ApplicationPage() {
                                 placeholder="Veli ücretini giriniz" 
                                 min="0"
                                 step="0.01"
-                                required
                                 {...field} 
                               />
                             </FormControl>
@@ -315,7 +313,7 @@ export default function ApplicationPage() {
                         name="stage"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Turnuva Etap Bilgileri</FormLabel>
+                            <FormLabel>Turnuva Etap Bilgileri *</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger>
@@ -337,7 +335,7 @@ export default function ApplicationPage() {
                         name="ageGroups"
                         render={() => (
                           <FormItem>
-                            <FormLabel>Yaş Grupları</FormLabel>
+                            <FormLabel>Yaş Grupları *</FormLabel>
                             <div className="space-y-3">
                               {ageGroupOptions.map((item) => (
                                 <FormField

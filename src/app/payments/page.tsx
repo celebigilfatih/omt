@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DollarSign, Plus, Search, Calendar } from "lucide-react";
+import { DollarSign, Plus, Search, Calendar, Pencil, Trash2 } from "lucide-react";
 import { isAdminAuthenticated } from "@/lib/auth";
 
 import { Button } from "@/components/ui/button";
@@ -52,13 +52,21 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   
   // Form states
   const [selectedTeamId, setSelectedTeamId] = useState("");
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  
+  // Edit form states
+  const [editPaymentMethod, setEditPaymentMethod] = useState("");
+  const [editAmount, setEditAmount] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   // Check authentication
   useEffect(() => {
@@ -100,6 +108,12 @@ export default function PaymentsPage() {
     fetchData();
   }, []);
 
+  const handleTeamSelect = (teamId: string) => {
+    setSelectedTeamId(teamId);
+    const team = teams.find(t => t.id === teamId);
+    setSelectedTeam(team || null);
+  };
+
   const handleSubmitPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -122,12 +136,14 @@ export default function PaymentsPage() {
         const newPayment = await response.json();
         setPayments([newPayment, ...payments]);
         
-        // Reset form but keep team selection for easy multiple payments
+        // Reset all form fields including team selection
+        setSelectedTeamId("");
+        setSelectedTeam(null);
         setPaymentMethod("");
         setAmount("");
         setDescription("");
         
-        alert("Ödeme başarıyla kaydedildi! Aynı takım için yeni ödeme ekleyebilirsiniz.");
+        alert("Ödeme başarıyla kaydedildi!");
       } else {
         const error = await response.json();
         alert(error.error || "Ödeme kaydedilemedi");
@@ -137,6 +153,79 @@ export default function PaymentsPage() {
       alert("Bir hata oluştu");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleEditPayment = (payment: Payment) => {
+    setEditingPayment(payment);
+    setEditPaymentMethod(payment.paymentMethod);
+    setEditAmount(payment.amount.toString());
+    setEditDescription(payment.description || "");
+    setShowEditDialog(true);
+  };
+
+  const handleUpdatePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPayment) return;
+    
+    setSubmitting(true);
+
+    try {
+      const response = await fetch(`/api/payments/${editingPayment.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          paymentMethod: editPaymentMethod,
+          amount: parseFloat(editAmount),
+          description: editDescription || undefined,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedPayment = await response.json();
+        setPayments(payments.map(p => p.id === updatedPayment.id ? updatedPayment : p));
+        
+        setShowEditDialog(false);
+        setEditingPayment(null);
+        setEditPaymentMethod("");
+        setEditAmount("");
+        setEditDescription("");
+        
+        alert("Ödeme başarıyla güncellendi!");
+      } else {
+        const error = await response.json();
+        alert(error.error || "Ödeme güncellenemedi");
+      }
+    } catch (error) {
+      console.error("Update payment error:", error);
+      alert("Bir hata oluştu");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!confirm("Bu ödeme kaydını silmek istediğinizden emin misiniz?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/payments/${paymentId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setPayments(payments.filter(p => p.id !== paymentId));
+        alert("Ödeme başarıyla silindi!");
+      } else {
+        const error = await response.json();
+        alert(error.error || "Ödeme silinemedi");
+      }
+    } catch (error) {
+      console.error("Delete payment error:", error);
+      alert("Bir hata oluştu");
     }
   };
 
@@ -171,7 +260,8 @@ export default function PaymentsPage() {
   const filteredPayments = payments.filter(payment =>
     payment.team.teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     payment.team.coachName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getPaymentMethodLabel(payment.paymentMethod).toLowerCase().includes(searchTerm.toLowerCase())
+    getPaymentMethodLabel(payment.paymentMethod).toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getStageLabel(payment.team.stage).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
@@ -252,13 +342,14 @@ export default function PaymentsPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Onaylı Takım
+                Kayıtlı Takım
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">
                 {teams.length}
               </div>
+              <p className="text-xs text-gray-500 mt-1">Toplam takım sayısı</p>
             </CardContent>
           </Card>
         </div>
@@ -270,7 +361,7 @@ export default function PaymentsPage() {
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Takım adı, antrenör veya ödeme yöntemi ile ara..."
+                  placeholder="Takım adı, antrenör, ödeme yöntemi veya etap ile ara..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -295,7 +386,7 @@ export default function PaymentsPage() {
                   <form onSubmit={handleSubmitPayment} className="space-y-4 mt-4">
                     <div>
                       <Label htmlFor="team">Takım *</Label>
-                      <Select value={selectedTeamId} onValueChange={setSelectedTeamId} required>
+                      <Select value={selectedTeamId} onValueChange={handleTeamSelect} required>
                         <SelectTrigger id="team">
                           <SelectValue placeholder="Takım seçiniz" />
                         </SelectTrigger>
@@ -308,6 +399,19 @@ export default function PaymentsPage() {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {selectedTeam && (
+                      <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border">
+                        <div>
+                          <Label className="text-sm text-gray-600">Sporcu Ücreti</Label>
+                          <div className="mt-1 font-semibold text-blue-600">₺{selectedTeam.athletePrice.toFixed(2)}</div>
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">Veli Ücreti</Label>
+                          <div className="mt-1 font-semibold text-purple-600">₺{selectedTeam.parentPrice.toFixed(2)}</div>
+                        </div>
+                      </div>
+                    )}
 
                     <div>
                       <Label htmlFor="paymentMethod">Ödeme Yöntemi *</Label>
@@ -357,6 +461,7 @@ export default function PaymentsPage() {
                         onClick={() => {
                           setShowAddDialog(false);
                           setSelectedTeamId("");
+                          setSelectedTeam(null);
                           setPaymentMethod("");
                           setAmount("");
                           setDescription("");
@@ -390,9 +495,194 @@ export default function PaymentsPage() {
           </CardContent>
         </Card>
 
+        {/* Edit Payment Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Ödeme Kaydını Düzenle</DialogTitle>
+              <DialogDescription>
+                {editingPayment && (
+                  <span className="font-medium">
+                    {editingPayment.team.teamName} - {editingPayment.team.coachName}
+                  </span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleUpdatePayment} className="space-y-4 mt-4">
+              <div>
+                <Label htmlFor="editPaymentMethod">Ödeme Yöntemi *</Label>
+                <Select value={editPaymentMethod} onValueChange={setEditPaymentMethod} required>
+                  <SelectTrigger id="editPaymentMethod">
+                    <SelectValue placeholder="Ödeme yöntemi seçiniz" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_METHODS.map((method) => (
+                      <SelectItem key={method.value} value={method.value}>
+                        {method.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="editAmount">Tutar (₺) *</Label>
+                <Input
+                  id="editAmount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={editAmount}
+                  onChange={(e) => setEditAmount(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="editDescription">Açıklama</Label>
+                <Textarea
+                  id="editDescription"
+                  placeholder="Ödeme ile ilgili notlar..."
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex justify-between gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowEditDialog(false);
+                    setEditingPayment(null);
+                    setEditPaymentMethod("");
+                    setEditAmount("");
+                    setEditDescription("");
+                  }}
+                  disabled={submitting}
+                >
+                  İptal
+                </Button>
+                <Button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700">
+                  {submitting ? "Güncelleniyor..." : "Güncelle"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Payments List */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Ödeme Kayıtları</CardTitle>
+            <CardDescription>
+              {filteredPayments.length} ödeme kaydı bulundu
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredPayments.length === 0 ? (
+              <div className="text-center py-12">
+                <span className="text-6xl text-gray-400">₺</span>
+                <h3 className="mt-2 text-sm font-semibold text-gray-900">
+                  Ödeme kaydı bulunamadı
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {searchTerm ? "Arama kriterleri ile eşleşen ödeme bulunamadı" : "Henüz ödeme kaydı eklenmemiş"}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Takım Adı</TableHead>
+                      <TableHead>Antrenör</TableHead>
+                      <TableHead>Etap</TableHead>
+                      <TableHead>Sporcu Ücreti</TableHead>
+                      <TableHead>Veli Ücreti</TableHead>
+                      <TableHead>Ödeme Yöntemi</TableHead>
+                      <TableHead className="text-right">Tutar</TableHead>
+                      <TableHead>Açıklama</TableHead>
+                      <TableHead>Tarih</TableHead>
+                      <TableHead className="text-center">İşlemler</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPayments.map((payment) => (
+                      <TableRow key={payment.id}>
+                        <TableCell className="font-medium">
+                          {payment.team.teamName}
+                        </TableCell>
+                        <TableCell>{payment.team.coachName}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {getStageLabel(payment.team.stage)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-blue-600 font-medium">
+                          ₺{payment.team.athletePrice.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-purple-600 font-medium">
+                          ₺{payment.team.parentPrice.toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getPaymentMethodBadge(payment.paymentMethod)}>
+                            {getPaymentMethodLabel(payment.paymentMethod)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-green-600">
+                          ₺{payment.amount.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate">
+                          {payment.description || "-"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Calendar className="mr-1 h-3 w-3" />
+                            {new Date(payment.createdAt).toLocaleDateString("tr-TR", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditPayment(payment)}
+                              className="h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-300"
+                            >
+                              <Pencil className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeletePayment(payment.id)}
+                              className="h-8 w-8 p-0 hover:bg-red-50 hover:border-red-300"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Team Payment Summary */}
         {teamSummaryArray.length > 0 && (
-          <Card className="mb-6">
+          <Card>
             <CardHeader>
               <CardTitle>Takımlara Göre Ödeme Özeti</CardTitle>
               <CardDescription>
@@ -440,83 +730,6 @@ export default function PaymentsPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Payments List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Ödeme Kayıtları</CardTitle>
-            <CardDescription>
-              {filteredPayments.length} ödeme kaydı bulundu
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filteredPayments.length === 0 ? (
-              <div className="text-center py-12">
-                <span className="text-6xl text-gray-400">₺</span>
-                <h3 className="mt-2 text-sm font-semibold text-gray-900">
-                  Ödeme kaydı bulunamadı
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  {searchTerm ? "Arama kriterleri ile eşleşen ödeme bulunamadı" : "Henüz ödeme kaydı eklenmemiş"}
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Takım Adı</TableHead>
-                      <TableHead>Antrenör</TableHead>
-                      <TableHead>Etap</TableHead>
-                      <TableHead>Ödeme Yöntemi</TableHead>
-                      <TableHead className="text-right">Tutar</TableHead>
-                      <TableHead>Açıklama</TableHead>
-                      <TableHead>Tarih</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPayments.map((payment) => (
-                      <TableRow key={payment.id}>
-                        <TableCell className="font-medium">
-                          {payment.team.teamName}
-                        </TableCell>
-                        <TableCell>{payment.team.coachName}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {getStageLabel(payment.team.stage)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getPaymentMethodBadge(payment.paymentMethod)}>
-                            {getPaymentMethodLabel(payment.paymentMethod)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-semibold text-green-600">
-                          ₺{payment.amount.toFixed(2)}
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">
-                          {payment.description || "-"}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Calendar className="mr-1 h-3 w-3" />
-                            {new Date(payment.createdAt).toLocaleDateString("tr-TR", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

@@ -16,10 +16,12 @@ export const TurkishLiraIcon: React.FC<TurkishLiraIconProps> = ({ className }) =
       strokeLinejoin="round"
       className={className}
     >
-      <path d="M8 5v14" />
-      <path d="M6 9h8" />
-      <path d="M6 13h8" />
-      <path d="M13 16c1.5 0 3-1 3-3s-1.5-3-3-3" />
+      {/* Vertical line */}
+      <path d="M7 4v13c0 2 1.5 3 3.5 3s3.5-1 3.5-3" />
+      {/* Top horizontal line */}
+      <path d="M4 9h10" />
+      {/* Bottom horizontal line */}
+      <path d="M4 13h10" />
     </svg>
   );
 };
