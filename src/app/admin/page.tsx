@@ -43,7 +43,6 @@ interface TeamApplication {
   teamName: string;
   coachName: string;
   phoneNumber: string;
-  email: string;
   stage: string;
   ageGroups: string[];
   description?: string;
@@ -169,16 +168,23 @@ export default function AdminPage() {
       });
 
       if (response.ok) {
-        // Refresh data
+        // Refresh data immediately
         const applicationsRes = await fetch("/api/admin/applications");
         
         if (applicationsRes.ok) {
           const applicationsData = await applicationsRes.json();
           setApplications(applicationsData);
         }
+        
+        // Show success message
+        alert(action === "approve" ? "Başvuru başarıyla onaylandı!" : "Başvuru başarıyla reddedildi!");
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || "Başvuru güncellenirken hata oluştu");
       }
     } catch (error) {
       console.error("Error updating application:", error);
+      alert("Başvuru güncellenirken hata oluştu");
     }
   };
 
@@ -567,10 +573,6 @@ export default function AdminPage() {
                           <p className="text-sm text-gray-600 mb-1">Telefon:</p>
                           <p className="font-medium">{application.phoneNumber}</p>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">E-posta:</p>
-                          <p className="font-medium">{application.email}</p>
-                        </div>
                       </div>
 
                       <div className="mb-4">
@@ -622,10 +624,6 @@ export default function AdminPage() {
                               <div>
                                 <label className="text-sm font-medium text-gray-700">Telefon</label>
                                 <p className="mt-1">{application.phoneNumber}</p>
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium text-gray-700">E-posta</label>
-                                <p className="mt-1">{application.email}</p>
                               </div>
                               <div>
                                 <label className="text-sm font-medium text-gray-700">Etap</label>

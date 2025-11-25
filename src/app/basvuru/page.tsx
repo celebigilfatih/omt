@@ -34,8 +34,12 @@ const formSchema = z.object({
   }),
   ageGroups: z.array(z.enum(["Y2012", "Y2013", "Y2014", "Y2015", "Y2016", "Y2017", "Y2018", "Y2019", "Y2020", "Y2021", "Y2022"])).min(1, "En az bir yaş grubu seçiniz"),
   ageGroupTeamCounts: z.record(z.string(), z.number().min(1, "Takım sayısı en az 1 olmalıdır").max(10, "Takım sayısı en fazla 10 olabilir")).optional(),
-  athletePrice: z.coerce.number().min(0, "Sporcu fiyatı 0'dan küçük olamaz"),
-  parentPrice: z.coerce.number().min(0, "Veli fiyatı 0'dan küçük olamaz"),
+  athletePrice: z.string().min(1, "Spor ücreti girilmesi zorunludur").transform((val) => parseFloat(val)).refine((val) => !isNaN(val) && val >= 0, {
+    message: "Geçerli bir fiyat giriniz",
+  }),
+  parentPrice: z.string().min(1, "Veli ücreti girilmesi zorunludur").transform((val) => parseFloat(val)).refine((val) => !isNaN(val) && val >= 0, {
+    message: "Geçerli bir fiyat giriniz",
+  }),
   description: z.string().max(500, "Açıklama en fazla 500 karakter olabilir").optional(),
 });
 
@@ -59,8 +63,8 @@ export default function ApplicationPage() {
       stage: undefined,
       ageGroups: [],
       ageGroupTeamCounts: {},
-      athletePrice: 0,
-      parentPrice: 0,
+      athletePrice: "",
+      parentPrice: "",
       description: "",
     },
   });
@@ -236,13 +240,14 @@ export default function ApplicationPage() {
                         name="athletePrice"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Sporcu Fiyatı (₺)</FormLabel>
+                            <FormLabel>Spor Ücreti (₺) *</FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 
-                                placeholder="0" 
+                                placeholder="Spor ücretini giriniz" 
                                 min="0"
                                 step="0.01"
+                                required
                                 {...field} 
                               />
                             </FormControl>
@@ -256,13 +261,14 @@ export default function ApplicationPage() {
                         name="parentPrice"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Veli Fiyatı (₺)</FormLabel>
+                            <FormLabel>Veli Ücreti (₺) *</FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 
-                                placeholder="0" 
+                                placeholder="Veli ücretini giriniz" 
                                 min="0"
                                 step="0.01"
+                                required
                                 {...field} 
                               />
                             </FormControl>

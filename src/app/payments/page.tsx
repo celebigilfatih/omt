@@ -21,6 +21,7 @@ interface Team {
   teamName: string;
   coachName: string;
   phoneNumber: string;
+  stage: string;
   athletePrice: number;
   parentPrice: number;
 }
@@ -139,6 +140,17 @@ export default function PaymentsPage() {
     }
   };
 
+  const getStageLabel = (stage: string) => {
+    const stages: Record<string, string> = {
+      STAGE_1: "1. Etap",
+      STAGE_2: "2. Etap",
+      STAGE_3: "3. Etap",
+      STAGE_4: "4. Etap",
+      FINAL: "Final",
+    };
+    return stages[stage] || stage;
+  };
+
   const getPaymentMethodLabel = (method: string) => {
     return PAYMENT_METHODS.find(m => m.value === method)?.label || method;
   };
@@ -188,7 +200,7 @@ export default function PaymentsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <DollarSign className="w-12 h-12 text-blue-600 mx-auto animate-pulse" />
+          <span className="text-4xl text-blue-600">₺</span>
           <p className="mt-4 text-lg text-gray-600">Yükleniyor...</p>
         </div>
       </div>
@@ -201,7 +213,7 @@ export default function PaymentsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <DollarSign className="h-8 w-8 text-blue-600" />
+            <span className="text-4xl">₺</span>
             Ödeme Yönetimi
           </h1>
           <p className="mt-2 text-gray-600">
@@ -290,7 +302,7 @@ export default function PaymentsPage() {
                         <SelectContent>
                           {teams.map((team) => (
                             <SelectItem key={team.id} value={team.id}>
-                              {team.teamName} - {team.coachName}
+                              {team.teamName}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -440,7 +452,7 @@ export default function PaymentsPage() {
           <CardContent>
             {filteredPayments.length === 0 ? (
               <div className="text-center py-12">
-                <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
+                <span className="text-6xl text-gray-400">₺</span>
                 <h3 className="mt-2 text-sm font-semibold text-gray-900">
                   Ödeme kaydı bulunamadı
                 </h3>
@@ -455,6 +467,7 @@ export default function PaymentsPage() {
                     <TableRow>
                       <TableHead>Takım Adı</TableHead>
                       <TableHead>Antrenör</TableHead>
+                      <TableHead>Etap</TableHead>
                       <TableHead>Ödeme Yöntemi</TableHead>
                       <TableHead className="text-right">Tutar</TableHead>
                       <TableHead>Açıklama</TableHead>
@@ -468,6 +481,11 @@ export default function PaymentsPage() {
                           {payment.team.teamName}
                         </TableCell>
                         <TableCell>{payment.team.coachName}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {getStageLabel(payment.team.stage)}
+                          </Badge>
+                        </TableCell>
                         <TableCell>
                           <Badge className={getPaymentMethodBadge(payment.paymentMethod)}>
                             {getPaymentMethodLabel(payment.paymentMethod)}

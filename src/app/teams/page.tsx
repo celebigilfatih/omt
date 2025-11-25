@@ -316,9 +316,19 @@ export default function TeamsPage() {
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">
-                  {filteredTeams.length}
+                  {filteredTeams.reduce((total, team) => {
+                    // Eğer yaş grubu filtresi varsa, sadece o yaş grubunun takım sayısını say
+                    if (ageGroupFilter && ageGroupFilter !== "all") {
+                      return total + (team.ageGroupTeamCounts?.[ageGroupFilter] || 1);
+                    }
+                    // Yaş grubu filtresi yoksa, tüm yaş gruplarının toplamını say
+                    const teamCount = team.ageGroups.reduce((sum, ageGroup) => {
+                      return sum + (team.ageGroupTeamCounts?.[ageGroup] || 1);
+                    }, 0);
+                    return total + teamCount;
+                  }, 0)}
                 </div>
-                <div className="text-sm text-gray-600">Filtrelenmiş</div>
+                <div className="text-sm text-gray-600">Filtrelenmiş Takım Sayısı</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-indigo-600">

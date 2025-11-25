@@ -3,14 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Trophy, Users, Settings, FileText, Menu, X, DollarSign } from "lucide-react";
+import { Trophy, Users, Settings, FileText, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TurkishLiraIcon } from "@/components/icons/TurkishLiraIcon";
 
 const navigation = [
   { name: "Ana Sayfa", href: "/", icon: Trophy },
   { name: "Başvuru Yap", href: "/basvuru", icon: FileText },
   { name: "Takım Yönetimi", href: "/teams", icon: Users },
-  { name: "Ödeme Yönetimi", href: "/payments", icon: DollarSign },
+  { name: "Ödeme Yönetimi", href: "/payments", icon: TurkishLiraIcon },
   { name: "Yönetici Paneli", href: "/admin", icon: Settings },
 ];
 
