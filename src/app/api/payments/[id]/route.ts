@@ -10,14 +10,15 @@ const paymentUpdateSchema = z.object({
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json()
     const validatedData = paymentUpdateSchema.parse(body)
+    const { id } = await params
 
     const payment = await prisma.payment.update({
-      where: { id: params.id },
+      where: { id },
       data: validatedData,
       include: {
         team: true,
@@ -43,11 +44,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await prisma.payment.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: 'Ödeme başarıyla silindi' })

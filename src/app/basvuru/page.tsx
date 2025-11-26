@@ -51,7 +51,7 @@ export default function ApplicationPage() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       teamName: "",
       coachName: "",
@@ -63,8 +63,8 @@ export default function ApplicationPage() {
       stage: undefined,
       ageGroups: [],
       ageGroupTeamCounts: {},
-      athletePrice: "",
-      parentPrice: "",
+      athletePrice: 0,
+      parentPrice: 0,
       description: "",
     },
   });

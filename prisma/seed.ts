@@ -16,6 +16,8 @@ async function main() {
         "Y2013": 3,
         "Y2014": 1
       },
+      athletePrice: 0,
+      parentPrice: 0,
       description: "Galatasaray'ın genç yeteneklerini yetiştiren akademi takımı"
     },
     {
@@ -29,6 +31,8 @@ async function main() {
         "Y2016": 2,
         "Y2017": 3
       },
+      athletePrice: 0,
+      parentPrice: 0,
       description: "Fenerbahçe'nin gelecek vadeden futbolcularını yetiştiren takım"
     },
     {
@@ -42,6 +46,8 @@ async function main() {
         "Y2019": 2,
         "Y2020": 1
       },
+      athletePrice: 0,
+      parentPrice: 0,
       description: "Beşiktaş'ın küçük yaş kategorilerindeki yetenekli oyuncuları"
     },
     {
@@ -56,6 +62,8 @@ async function main() {
         "Y2015": 1,
         "Y2016": 2
       },
+      athletePrice: 0,
+      parentPrice: 0,
       description: "Trabzonspor'un çok kategorili güçlü takımı"
     },
     {
@@ -68,6 +76,8 @@ async function main() {
         "Y2021": 5,
         "Y2022": 3
       },
+      athletePrice: 0,
+      parentPrice: 0,
       description: "Başakşehir'in en küçük yaş kategorilerindeki takımı"
     }
   ]
