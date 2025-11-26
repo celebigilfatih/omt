@@ -1,13 +1,8 @@
-# Use existing Redis Alpine image and install Node.js
-FROM redis:7-alpine AS base
-
-# Install Node.js and npm
-RUN apk add --no-cache nodejs npm
+FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat
 
 # Install dependencies including dev dependencies for build
 FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
@@ -21,6 +16,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma Client
+ARG DATABASE_URL=postgresql://postgres:postgres@localhost:5432/placeholder
+ENV DATABASE_URL=$DATABASE_URL
 RUN npx prisma generate
 
 # Build the application
