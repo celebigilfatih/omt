@@ -340,33 +340,37 @@ export default function PaymentsPage() {
         <table>
           <thead>
             <tr>
-              <th>Tarih</th>
               <th>Takım</th>
               <th>Antrenör</th>
               <th>Etap</th>
+              <th>Sporcu Ücreti</th>
+              <th>Veli Ücreti</th>
               <th>Ödeme Yöntemi</th>
               <th>Tutar</th>
               <th>Açıklama</th>
+              <th>Tarih</th>
             </tr>
           </thead>
           <tbody>
             ${filteredPayments.map(payment => `
               <tr>
-                <td>${new Date(payment.createdAt).toLocaleDateString('tr-TR')}</td>
                 <td>${payment.team.teamName}</td>
                 <td>${payment.team.coachName}</td>
                 <td>${getStageLabel(payment.team.stage)}</td>
+                <td style="color: #2563eb; font-weight: 600;">₺${payment.team.athletePrice.toFixed(2)}</td>
+                <td style="color: #7c3aed; font-weight: 600;">₺${payment.team.parentPrice.toFixed(2)}</td>
                 <td><span class="badge method-${payment.paymentMethod}">${getPaymentMethodLabel(payment.paymentMethod)}</span></td>
-                <td>₺${payment.amount.toFixed(2)}</td>
+                <td style="color: #059669; font-weight: bold;">₺${payment.amount.toFixed(2)}</td>
                 <td>${payment.description || '-'}</td>
+                <td>${new Date(payment.createdAt).toLocaleDateString('tr-TR')}</td>
               </tr>
             `).join('')}
           </tbody>
           <tfoot>
             <tr style="background: #f3f4f6; font-weight: bold;">
-              <td colspan="5" style="text-align: right; padding: 12px;">TOPLAM:</td>
+              <td colspan="6" style="text-align: right; padding: 12px;">TOPLAM:</td>
               <td style="padding: 12px; color: #059669; font-size: 16px;">₺${filteredTotalAmount.toFixed(2)}</td>
-              <td></td>
+              <td colspan="2"></td>
             </tr>
           </tfoot>
         </table>
