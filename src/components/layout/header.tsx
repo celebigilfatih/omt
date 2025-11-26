@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Trophy, Users, Settings, FileText, Menu, X, LogOut } from "lucide-react";
@@ -10,15 +10,20 @@ import { TurkishLiraIcon } from "@/components/icons/TurkishLiraIcon";
 const navigation = [
   { name: "Ana Sayfa", href: "/", icon: Trophy },
   { name: "Başvuru Yap", href: "/basvuru", icon: FileText },
+  { name: "Başvuru Onay Yönetimi", href: "/admin", icon: Settings },
   { name: "Takım Yönetimi", href: "/teams", icon: Users },
   { name: "Ödeme Yönetimi", href: "/payments", icon: TurkishLiraIcon },
-  { name: "Başvuru Yönetimi", href: "/admin", icon: Settings },
 ];
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Admin login sayfasında header'ı gizle
   if (pathname === "/admin/login") {
@@ -57,13 +62,15 @@ export function Header() {
           <nav className="hidden md:flex items-center space-x-1">
             {navigation.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = isMounted && pathname === item.href;
               
               return (
                 <Link key={item.name} href={item.href}>
                   <Button
                     variant={isActive ? "default" : "ghost"}
-                    className="flex items-center space-x-2 cursor-pointer"
+                    className={`flex items-center space-x-2 cursor-pointer ${
+                      isActive ? "bg-blue-600 text-white hover:bg-blue-700" : ""
+                    }`}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.name}</span>
@@ -105,7 +112,7 @@ export function Header() {
             <nav className="px-2 pt-2 pb-3 space-y-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = isMounted && pathname === item.href;
                 
                 return (
                   <Link 
@@ -116,7 +123,9 @@ export function Header() {
                   >
                     <Button
                       variant={isActive ? "default" : "ghost"}
-                      className="w-full justify-start flex items-center space-x-2"
+                      className={`w-full justify-start flex items-center space-x-2 ${
+                        isActive ? "bg-blue-600 text-white hover:bg-blue-700" : ""
+                      }`}
                     >
                       <Icon className="h-4 w-4" />
                       <span>{item.name}</span>
