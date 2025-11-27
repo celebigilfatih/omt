@@ -60,6 +60,9 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 # Copy health check script
 COPY --from=builder /app/docker-healthcheck.js ./
 
+# Install tsx globally for seeding
+RUN npm install -g tsx
+
 USER nextjs
 
 EXPOSE 3000
