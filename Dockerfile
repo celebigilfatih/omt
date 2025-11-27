@@ -74,5 +74,5 @@ ENV HOSTNAME "0.0.0.0"
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD node docker-healthcheck.js
 
-# Run the application
-CMD ["node", "server.js"]
+# Run migrations, then start the application
+CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
