@@ -22,7 +22,8 @@ RUN npx prisma generate
 
 # Build the application
 ENV NODE_ENV=production
-RUN npm run build
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build:prod
 
 # Production image, copy all the files and run next
 FROM base AS runner
